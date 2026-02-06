@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Letters of Credit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link th:replace="~{layout :: styles}">
+</head>
+<body>
+    <nav th:replace="~{layout :: sidebar}"></nav>
+    
+    <div class="main-content">
+        <div class="top-navbar">
+            <div>
+                <h5 class="mb-0" th:text="${pageTitle}">Letters of Credit</h5>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="dropdown user-dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" 
+                       id="userDropdown" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-2" style="font-size: 1.5rem;"></i>
+                        <span sec:authentication="name">User</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><form th:action="@{/logout}" method="post" class="m-0">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </button>
+                        </form></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <!-- Alert Messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show">
+                <i class="bi bi-check-circle me-2"></i><span th:text="${successMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show">
+                <i class="bi bi-exclamation-circle me-2"></i><span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-file-earmark-text me-2"></i>All Letters of Credit</span>
+                    <a href="/lc/create" class="btn btn-primary" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">
+                        <i class="bi bi-plus-circle me-2"></i>Create New LC
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Applicant</th>
+                                    <th>Beneficiary</th>
+                                    <th>Amount</th>
+                                    <th>Expiry Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="lc : ${letterOfCredits}" th:if="${letterOfCredits != null && !letterOfCredits.isEmpty()}">
+                                    <td>
+                                        <a th:href="@{/lc/view/{id}(id=${lc.lcId})}" th:text="${lc.referenceNumber}" class="fw-bold"></a>
+                                    </td>
+                                    <td th:text="${lc.applicantName}"></td>
+                                    <td th:text="${lc.beneficiaryName}"></td>
+                                    <td th:text="${lc.currency + ' ' + #numbers.formatDecimal(lc.amount, 1, 2)}"></td>
+                                    <td th:text="${#temporals.format(lc.expiryDate, 'dd-MMM-yyyy')}"></td>
+                                    <td>
+                                        <span class="badge" 
+                                              th:classappend="${lc.status.name() == 'APPROVED' or lc.status.name() == 'OPEN' ? 'bg-success' : 
+                                                               (lc.status.name() == 'REJECTED' ? 'bg-danger' : 
+                                                               (lc.status.name() == 'CLOSED' ? 'bg-secondary' : 'bg-warning'))}"
+                                              th:text="${lc.status.displayName}"></span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a th:href="@{/lc/view/{id}(id=${lc.lcId})}" class="btn btn-outline-primary" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a th:href="@{/lc/edit/{id}(id=${lc.lcId})}" class="btn btn-outline-secondary" title="Edit"
+                                               sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')"
+                                               th:if="${lc.status.name() == 'DRAFT' or lc.status.name() == 'REJECTED'}">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${letterOfCredits == null || letterOfCredits.isEmpty()}">
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox d-block mb-2" style="font-size: 2rem;"></i>
+                                        No Letters of Credit found
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root { --sidebar-width: 250px; }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); 
+                   background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding-top: 20px; z-index: 1000; }
+        .sidebar .brand { color: white; font-size: 1.5rem; font-weight: bold; padding: 0 20px 20px; 
+                          border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 12px 20px; display: flex; align-items: center; }
+        .sidebar .nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+        .sidebar .nav-link.active { color: white; background: rgba(255,255,255,0.2); border-left: 3px solid white; }
+        .sidebar .nav-link i { margin-right: 10px; }
+        .sidebar .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; 
+                                padding: 20px 20px 10px; letter-spacing: 1px; }
+        .main-content { margin-left: var(--sidebar-width); }
+        .top-navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); 
+                      display: flex; justify-content: space-between; align-items: center; }
+        .page-content { padding: 30px; background-color: #f8f9fa; min-height: calc(100vh - 70px); }
+        .card { border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card-header { background: white; border-bottom: 1px solid #eee; font-weight: 600; }
+    </style>
+</body>
+</html>

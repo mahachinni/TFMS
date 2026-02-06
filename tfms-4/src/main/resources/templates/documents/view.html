@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Document View</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style th:replace="~{layout :: styles}"></style>
+</head>
+<body>
+    <nav th:replace="~{layout :: sidebar}"></nav>
+    <div class="main-content">
+        <div class="top-navbar"><div><h5 class="mb-0" th:text="${pageTitle}">Document Details</h5></div>
+            <div class="d-flex align-items-center"><div class="dropdown"><a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-person-circle me-2" style="font-size:1.5rem;"></i><span sec:authentication="name">User</span></a><ul class="dropdown-menu dropdown-menu-end"><li><form th:action="@{/logout}" method="post" class="m-0"><button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></form></li></ul></div></div>
+        </div>
+        <div class="page-content">
+            <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i><span th:text="${successMessage}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-file-earmark-text me-2"></i>Document #<span th:text="${document.documentId}"></span></span>
+                            <span class="badge fs-6" th:classappend="${document.status.name() == 'VERIFIED' ? 'bg-success' : (document.status.name() == 'REJECTED' ? 'bg-danger' : 'bg-warning')}" th:text="${document.status.displayName}"></span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="text-muted small">Document Type</label><p class="mb-0 fw-bold" th:text="${document.documentType}"></p></div>
+                                <div class="col-md-6"><label class="text-muted small">Reference Number</label><p class="mb-0 fw-bold" th:text="${document.referenceNumber}"></p></div>
+                                <div class="col-md-6"><label class="text-muted small">Uploaded By</label><p class="mb-0" th:text="${document.uploadedBy}"></p></div>
+                                <div class="col-md-6"><label class="text-muted small">Upload Date</label><p class="mb-0" th:text="${document.uploadDate != null ? #temporals.format(document.uploadDate, 'dd-MMM-yyyy') : 'N/A'}"></p></div>
+                                <div class="col-12" th:if="${document.description}"><label class="text-muted small">Description</label><p class="mb-0" th:text="${document.description}"></p></div>
+                                <div class="col-md-6"><label class="text-muted small">File Name</label><p class="mb-0"><i class="bi bi-file-earmark me-2"></i><span th:text="${document.fileName ?: 'document.pdf'}"></span></p></div>
+                                <div class="col-md-6"><label class="text-muted small">File Size</label><p class="mb-0" th:text="${document.fileSize != null ? (document.fileSize + ' bytes') : 'N/A'}"></p></div>
+                                <div class="col-md-6"><label class="text-muted small">Status</label><p class="mb-0"><span class="badge" th:classappend="${document.status.name() == 'APPROVED' ? 'bg-success' : (document.status.name() == 'REJECTED' ? 'bg-danger' : 'bg-warning')}" th:text="${document.status.displayName}"></span></p></div>
+                                <div class="col-md-6" th:if="${document.tradeReferenceNumber}">
+                                    <label class="text-muted small">Linked Transaction Reference</label>
+                                    <p class="mb-0">
+                                        <a th:href="@{/tracking/status(reference=${document.tradeReferenceNumber})}" class="link-primary text-decoration-none fw-bold">
+                                            <i class="bi bi-link-45deg me-1"></i><span th:text="${document.tradeReferenceNumber}"></span>
+                                        </a>
+                                    </p>
+                                    <small class="text-muted d-block mt-1">Click to view linked LC/BG details</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card"><div class="card-header"><i class="bi bi-eye me-2"></i>Document Preview</div>
+                        <div class="card-body text-center py-5 bg-light">
+                            <div th:if="${document.filePath != null and (document.filePath.endsWith('.pdf') or document.filePath.endsWith('.PDF'))}">
+                                <embed th:src="@{/documents/preview/{id}(id=${document.documentId})}" type="application/pdf" width="100%" height="500px">
+                            </div>
+                            <div th:if="${document.filePath != null and (document.filePath.endsWith('.jpg') or document.filePath.endsWith('.jpeg') or document.filePath.endsWith('.png'))}">
+                                <img th:src="@{/documents/preview/{id}(id=${document.documentId})}" class="img-fluid" style="max-height:500px">
+                            </div>
+                            <div th:unless="${document.filePath != null and (document.filePath.endsWith('.pdf') or document.filePath.endsWith('.jpg') or document.filePath.endsWith('.jpeg') or document.filePath.endsWith('.png'))}">
+                                <i class="bi bi-file-earmark-text display-1 text-muted"></i>
+                                <p class="text-muted mt-3">Preview not available for this file type</p>
+                                <a th:href="@{/documents/download/{id}(id=${document.documentId})}" class="btn btn-primary"><i class="bi bi-download me-2"></i>Download to View</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card mb-4"><div class="card-header"><i class="bi bi-gear me-2"></i>Actions</div>
+                        <div class="card-body"><div class="d-grid gap-2">
+                            <a th:href="@{/documents/download/{id}(id=${document.documentId})}" class="btn btn-success"><i class="bi bi-download me-2"></i>Download</a>
+                            <span sec:authorize="hasRole('OFFICER')">
+                                <button th:if="${document.status.name() == 'PENDING'}" type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#verifyModal"><i class="bi bi-patch-check me-2"></i>Verify Document</button>
+                            </span>
+                            <hr><a href="/documents" class="btn btn-outline-primary"><i class="bi bi-arrow-left me-2"></i>Back to List</a>
+                        </div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><i class="bi bi-link-45deg me-2"></i>Related Transaction</div>
+                        <div class="card-body">
+                            <div th:if="${document.tradeReferenceNumber}">
+                                <p class="small text-muted mb-1">Linked LC/BG Reference</p>
+                                <p class="fw-bold badge bg-primary" th:text="${document.tradeReferenceNumber}"></p>
+                                <a th:href="@{/tracking/status(reference=${document.tradeReferenceNumber})}" class="btn btn-primary btn-sm w-100">
+                                    <i class="bi bi-search me-2"></i>View Linked Transaction
+                                </a>
+                            </div>
+                            <div th:unless="${document.tradeReferenceNumber}">
+                                <p class="small text-muted mb-1">Document Reference</p>
+                                <p class="fw-bold" th:text="${document.referenceNumber}"></p>
+                                <a th:href="@{/tracking/status(reference=${document.referenceNumber})}" class="btn btn-outline-secondary btn-sm w-100">
+                                    <i class="bi bi-search me-2"></i>Track Document
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="verifyModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <form th:action="@{/documents/verify/{id}(id=${document.documentId})}" method="post">
+            <div class="modal-header"><h5 class="modal-title">Verify Document</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="mb-3"><label class="form-label">Verification Status</label><select class="form-select" name="status"><option value="VERIFIED">Approve - Document Valid</option><option value="REJECTED">Reject - Document Invalid</option></select></div>
+                <div class="mb-3"><label class="form-label">Remarks</label><textarea class="form-control" name="remarks" rows="3" placeholder="Enter verification remarks..."></textarea></div>
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Submit Verification</button></div>
+        </form>
+    </div></div></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>:root{--sidebar-width:250px}.sidebar{position:fixed;top:0;left:0;height:100vh;width:var(--sidebar-width);background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);padding-top:20px;z-index:1000}.sidebar .brand{color:white;font-size:1.5rem;font-weight:bold;padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:20px}.sidebar .nav-link{color:rgba(255,255,255,0.8);padding:12px 20px;display:flex;align-items:center}.sidebar .nav-link:hover{color:white;background:rgba(255,255,255,0.1)}.sidebar .nav-link i{margin-right:10px}.sidebar .nav-section{color:rgba(255,255,255,0.5);font-size:0.75rem;text-transform:uppercase;padding:20px 20px 10px}.main-content{margin-left:var(--sidebar-width)}.top-navbar{background:white;padding:15px 30px;box-shadow:0 2px 4px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center}.page-content{padding:30px;background-color:#f8f9fa;min-height:calc(100vh - 70px)}.card{border:none;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}.card-header{background:white;border-bottom:1px solid #eee;font-weight:600}</style>
+</body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Risk Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style th:replace="~{layout :: styles}"></style>
+</head>
+<body>
+    <nav th:replace="~{layout :: sidebar}"></nav>
+    <div class="main-content">
+        <div class="top-navbar"><div><h5 class="mb-0" th:text="${pageTitle}">Risk Assessment Details</h5></div>
+            <div class="d-flex align-items-center"><div class="dropdown"><a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-person-circle me-2" style="font-size:1.5rem;"></i><span sec:authentication="name">User</span></a><ul class="dropdown-menu dropdown-menu-end"><li><form th:action="@{/logout}" method="post" class="m-0"><button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></form></li></ul></div></div>
+        </div>
+        <div class="page-content">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-shield-exclamation me-2"></i>Risk Assessment #<span th:text="${riskAssessment.riskId}"></span></span>
+                            <span class="badge fs-6" th:classappend="${riskAssessment.riskLevel.name() == 'HIGH' ? 'bg-danger' : (riskAssessment.riskLevel.name() == 'MEDIUM' ? 'bg-warning' : 'bg-success')}" th:text="${riskAssessment.riskLevel.displayName}"></span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="text-muted small">Transaction Reference</label><p class="mb-0 fw-bold"><a th:href="@{/tracking/status(reference=${riskAssessment.transactionReference})}" th:text="${riskAssessment.transactionReference}"></a></p></div>
+                                <div class="col-md-6"><label class="text-muted small">Assessment Date</label><p class="mb-0" th:text="${riskAssessment.assessmentDate != null ? #temporals.format(riskAssessment.assessmentDate, 'dd-MMM-yyyy HH:mm') : 'N/A'}"></p></div>
+                                <div class="col-md-6"><label class="text-muted small">Assessed By</label><p class="mb-0" th:text="${riskAssessment.assessedBy}"></p></div>
+                                <div class="col-md-6">
+                                    <label class="text-muted small">Risk Score</label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress flex-grow-1 me-2" style="height:25px">
+                                            <div class="progress-bar" role="progressbar" th:style="'width:' + ${riskAssessment.riskScore} + '%'" th:classappend="${riskAssessment.riskScore > 70 ? 'bg-danger' : (riskAssessment.riskScore > 40 ? 'bg-warning' : 'bg-success')}">
+                                                <span th:text="${riskAssessment.riskScore} + '%'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12" th:if="${riskAssessment.remarks}"><label class="text-muted small">Remarks</label><p class="mb-0" th:text="${riskAssessment.remarks}"></p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mb-4"><div class="card-header"><i class="bi bi-bar-chart me-2"></i>Risk Factors Breakdown</div>
+                        <div class="card-body">
+                            <div th:if="${riskAssessment.riskFactors}" id="riskFactorsContainer">
+                                <div class="row g-3" id="factorsDisplay" th:attr="data-factors=${riskAssessment.riskFactors}"></div>
+                            </div>
+                            <div th:unless="${riskAssessment.riskFactors}" class="text-muted text-center py-3">No detailed risk factors available</div>
+                            <script th:inline="javascript">
+                                /*<![CDATA[*/
+                                (function () {
+                                  try {
+                                    const container = document.getElementById('factorsDisplay');
+                                    if (!container) return;
+
+                                    const raw = container.getAttribute('data-factors');
+                                    if (!raw || raw.trim() === '') {
+                                      container.innerHTML = '<div class="text-muted text-center py-3">No detailed risk factors available</div>';
+                                      return;
+                                    }
+
+                                    let factors = null;
+
+                                    // Try parsing as JSON
+                                    try {
+                                      factors = JSON.parse(raw);
+                                    } catch (e) {
+                                      // If not valid JSON, display error message
+                                      console.error('Failed to parse risk factors:', e);
+                                      container.innerHTML = '<div class="text-muted text-center py-3">Unable to parse risk factors data</div>';
+                                      return;
+                                    }
+
+                                    // Label mapping for better display names
+                                    const labels = {
+                                      amountRisk: 'Amount Risk',
+                                      counterpartyRisk: 'Counterparty Risk',
+                                      durationRisk: 'Duration Risk',
+                                      currencyRisk: 'Currency Risk',
+                                      documentationRisk: 'Documentation Risk',
+                                      guaranteeTypeRisk: 'Guarantee Type Risk',
+                                      countryRisk: 'Country Risk',
+                                      sectorRisk: 'Sector Risk'
+                                    };
+
+                                    const fragment = document.createDocumentFragment();
+
+                                    Object.entries(factors).forEach(([key, value]) => {
+                                      // Handle numeric level (1=Low, 2=Medium, 3=High)
+                                      let levelNum = Number(value);
+                                      let levelText, levelClass;
+
+                                      if (levelNum === 1) {
+                                        levelText = 'Low';
+                                        levelClass = 'success';
+                                      } else if (levelNum === 2) {
+                                        levelText = 'Medium';
+                                        levelClass = 'warning';
+                                      } else if (levelNum === 3) {
+                                        levelText = 'High';
+                                        levelClass = 'danger';
+                                      } else {
+                                        // Fallback for non-standard values
+                                        levelText = String(value);
+                                        levelClass = 'secondary';
+                                      }
+
+                                      const col = document.createElement('div');
+                                      col.className = 'col-md-6';
+
+                                      const box = document.createElement('div');
+                                      box.className = 'p-3 border rounded';
+
+                                      const row = document.createElement('div');
+                                      row.className = 'd-flex justify-content-between align-items-center';
+
+                                      const labelSpan = document.createElement('span');
+                                      labelSpan.textContent = labels[key] || key;
+
+                                      const badgeSpan = document.createElement('span');
+                                      badgeSpan.className = 'badge bg-' + levelClass;
+                                      badgeSpan.textContent = levelText;
+
+                                      row.appendChild(labelSpan);
+                                      row.appendChild(badgeSpan);
+                                      box.appendChild(row);
+                                      col.appendChild(box);
+                                      fragment.appendChild(col);
+                                    });
+
+                                    container.innerHTML = '';
+                                    container.appendChild(fragment);
+                                  } catch (err) {
+                                    console.error('Could not parse or render risk factors', err);
+                                    const container = document.getElementById('factorsDisplay');
+                                    if (container) {
+                                      container.innerHTML = '<div class="text-muted text-center py-3">Error displaying risk factors</div>';
+                                    }
+                                  }
+                                })();
+                                /*]]>*/
+                            </script>
+                        </div>
+                    </div>
+                    <div class="card"><div class="card-header"><i class="bi bi-lightbulb me-2"></i>Recommendations</div>
+                        <div class="card-body">
+                            <div th:if="${riskAssessment.riskLevel.name() == 'HIGH'}" class="alert alert-danger"><strong>High Risk Transaction:</strong><ul class="mb-0 mt-2"><li>Escalate to senior management for approval</li><li>Request additional documentation and guarantees</li><li>Consider enhanced due diligence measures</li><li>Review counterparty credit exposure limits</li></ul></div>
+                            <div th:if="${riskAssessment.riskLevel.name() == 'MEDIUM'}" class="alert alert-warning"><strong>Medium Risk Transaction:</strong><ul class="mb-0 mt-2"><li>Perform additional verification checks</li><li>Monitor transaction closely</li><li>Consider requesting additional collateral</li><li>Review after 30 days</li></ul></div>
+                            <div th:if="${riskAssessment.riskLevel.name() == 'LOW'}" class="alert alert-success"><strong>Low Risk Transaction:</strong><ul class="mb-0 mt-2"><li>Proceed with standard processing</li><li>Regular monitoring sufficient</li><li>No additional measures required</li></ul></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card mb-4"><div class="card-header"><i class="bi bi-gear me-2"></i>Actions</div>
+                        <div class="card-body"><div class="d-grid gap-2">
+                            <a th:href="@{/tracking/status(reference=${riskAssessment.transactionReference})}" class="btn btn-outline-primary"><i class="bi bi-search me-2"></i>View Transaction</a>
+                            <span sec:authorize="hasRole('RISK')"><a th:href="@{/risk/update/{id}(id=${riskAssessment.riskId})}" class="btn btn-outline-secondary"><i class="bi bi-pencil me-2"></i>Update Assessment</a></span>
+                            <button class="btn btn-outline-success" onclick="window.print()"><i class="bi bi-printer me-2"></i>Print Report</button>
+                            <hr><a href="/risk" class="btn btn-outline-primary"><i class="bi bi-arrow-left me-2"></i>Back to List</a>
+                        </div></div>
+                    </div>
+                    <div class="card"><div class="card-header"><i class="bi bi-info-circle me-2"></i>Assessment Info</div>
+                        <div class="card-body">
+                            <div class="mb-2"><small class="text-muted">Created</small><p class="mb-0" th:text="${riskAssessment.createdAt != null ? #temporals.format(riskAssessment.createdAt, 'dd-MMM-yyyy HH:mm') : 'N/A'}"></p></div>
+                            <div th:if="${riskAssessment.updatedAt}"><small class="text-muted">Last Updated</small><p class="mb-0" th:text="${#temporals.format(riskAssessment.updatedAt, 'dd-MMM-yyyy HH:mm')}"></p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <style>:root{--sidebar-width:250px}.sidebar{position:fixed;top:0;left:0;height:100vh;width:var(--sidebar-width);background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);padding-top:20px;z-index:1000}.sidebar .brand{color:white;font-size:1.5rem;font-weight:bold;padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:20px}.sidebar .nav-link{color:rgba(255,255,255,0.8);padding:12px 20px;display:flex;align-items:center}.sidebar .nav-link:hover{color:white;background:rgba(255,255,255,0.1)}.sidebar .nav-link i{margin-right:10px}.sidebar .nav-section{color:rgba(255,255,255,0.5);font-size:0.75rem;text-transform:uppercase;padding:20px 20px 10px}.main-content{margin-left:var(--sidebar-width)}.top-navbar{background:white;padding:15px 30px;box-shadow:0 2px 4px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center}.page-content{padding:30px;background-color:#f8f9fa;min-height:calc(100vh - 70px)}.card{border:none;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}.card-header{background:white;border-bottom:1px solid #eee;font-weight:600}@media print{.sidebar,.top-navbar,.btn{display:none !important}.main-content{margin-left:0}.page-content{padding:0}}</style>
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TFMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root { --sidebar-width: 250px; }
+        .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: var(--sidebar-width); background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding-top: 20px; z-index: 1000; }
+        .sidebar .brand { color: white; font-size: 1.5rem; font-weight: bold; padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 12px 20px; display: flex; align-items: center; text-decoration: none; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background: rgba(255,255,255,0.1); }
+        .sidebar .nav-link i { margin-right: 10px; width: 20px; }
+        .sidebar .nav-section { color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; padding: 20px 20px 10px; letter-spacing: 1px; }
+        .main-content { margin-left: var(--sidebar-width); }
+        .top-navbar { background: white; padding: 15px 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .page-content { padding: 30px; background-color: #f8f9fa; min-height: calc(100vh - 70px); }
+        .card { border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card-header { background: white; border-bottom: 1px solid #eee; font-weight: 600; padding: 15px 20px; }
+        .stat-card { padding: 25px; border-radius: 10px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .stat-card.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card.success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .stat-card.info { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-card.warning { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+        .stat-value { font-size: 2.5rem; font-weight: bold; }
+        .stat-label { opacity: 0.9; font-size: 0.95rem; margin-top: 5px; }
+        .stat-icon { font-size: 3rem; opacity: 0.5; }
+        .table th { border-top: none; font-weight: 600; color: #6c757d; font-size: 0.85rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="brand">
+            <i class="bi bi-bank me-2"></i>TFMS
+        </div>
+        <div class="nav-section">Main</div>
+
+        <a href="/dashboard" class="nav-link" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')"> <i class="bi bi-speedometer2"></i>Dashboard</a>
+        <div class="nav-section" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">Trade Finance</div>
+        <a href="/lc" class="nav-link" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')"><i class="bi bi-file-earmark-text"></i>Letters of Credit</a>
+        <a href="/guarantee" class="nav-link" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')"><i class="bi bi-shield-check"></i>Bank Guarantees</a>
+        <a href="/documents" class="nav-link" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')"><i class="bi bi-folder"></i>Documents</a>
+        
+        <div class="nav-section" sec:authorize="hasAnyRole('RISK', 'OFFICER')">Risk & Compliance</div>
+        <a href="/risk" class="nav-link" sec:authorize="hasAnyRole('RISK', 'OFFICER')"><i class="bi bi-graph-up"></i>Risk Assessment</a>
+        <a href="/compliance" class="nav-link" sec:authorize="hasRole('OFFICER')"><i class="bi bi-clipboard-check"></i>Compliance</a>
+        
+        <div class="nav-section">Tracking</div>
+        <a href="/tracking" class="nav-link"><i class="bi bi-geo-alt"></i>Transaction Tracking</a>
+    </nav>
+
+    <div class="main-content">
+        <!-- Top Navigation Bar -->
+        <div class="top-navbar">
+            <div>
+                <h5 class="mb-0">Dashboard</h5>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-2" style="font-size: 1.5rem;"></i>
+                        <span sec:authentication="name">User</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Welcome Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4>Welcome, <span th:text="${currentUser}">User</span>!</h4>
+                            <p class="text-muted mb-0">
+                                You are logged in as 
+                                <span class="badge bg-primary" th:text="${userRole}">Role</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3" sec:authorize="hasAnyRole( 'OFFICER')">
+                    <div class="stat-card primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value" th:text="${totalLCs != null ? totalLCs : 0}">0</div>
+                                <div class="stat-label">Letters of Credit</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3" sec:authorize="hasAnyRole( 'OFFICER')">
+                    <div class="stat-card success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value" th:text="${totalGuarantees != null ? totalGuarantees : 0}">0</div>
+                                <div class="stat-label">Bank Guarantees</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3" sec:authorize="hasAnyRole( 'OFFICER')">
+                    <div class="stat-card info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value" th:text="${totalDocuments != null ? totalDocuments : 0}">0</div>
+                                <div class="stat-label">Documents</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-folder"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3" sec:authorize="hasRole('OFFICER')">
+                    <div class="stat-card warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value" th:text="${pendingLCs != null ? pendingLCs : 0}">0</div>
+                                <div class="stat-label">Pending Approvals</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-clock"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3" sec:authorize="hasRole('RISK')">
+                    <div class="stat-card danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value" th:text="${highRiskCount != null ? highRiskCount : 0}">0</div>
+                                <div class="stat-label">High Risk Items</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3" sec:authorize="hasRole('RISK')">
+                    <div class="stat-card info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="stat-value" th:text="${lcsSentToRiskCount != null ? lcsSentToRiskCount : 0}">0</div>
+                                <div class="stat-label">LCs Sent to Risk</div>
+                            </div>
+                            <div class="stat-icon"><i class="bi bi-shield-lock"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-lightning me-2"></i>Quick Actions
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">
+                                    <a href="/lc/create" class="btn btn-outline-primary w-100 py-3">
+                                        <i class="bi bi-plus-circle d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        Create LC
+                                    </a>
+                                </div>
+                                <div class="col-md-3" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">
+                                    <a href="/guarantee/request" class="btn btn-outline-success w-100 py-3">
+                                        <i class="bi bi-shield-plus d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        Request Guarantee
+                                    </a>
+                                </div>
+                                <div class="col-md-3" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">
+                                    <a href="/documents/upload" class="btn btn-outline-info w-100 py-3">
+                                        <i class="bi bi-upload d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        Upload Document
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="/tracking/status" class="btn btn-outline-secondary w-100 py-3">
+                                        <i class="bi bi-search d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        Track Status
+                                    </a>
+                                </div>
+                                <div class="col-md-3" sec:authorize="hasAnyRole('RISK', 'OFFICER')">
+                                    <a href="/risk/analyze" class="btn btn-outline-warning w-100 py-3">
+                                        <i class="bi bi-graph-up d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        Analyze Risk
+                                    </a>
+                                </div>
+                                <div class="col-md-3" sec:authorize="hasRole('OFFICER')">
+                                    <a href="/compliance/generate" class="btn btn-outline-danger w-100 py-3">
+                                        <i class="bi bi-clipboard-check d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        Compliance Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Tables -->
+            <div class="row">
+                <!-- Recent Letters of Credit -->
+                <div class="col-md-6" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-file-earmark-text me-2"></i>Recent Letters of Credit</span>
+                            <a href="/lc" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="lc : ${recentLCs}">
+                                        <td>
+                                            <a th:href="@{/lc/view/{id}(id=${lc.lcId})}" th:text="${lc.referenceNumber}">REF001</a>
+                                        </td>
+                                        <td th:text="${lc.currency + ' ' + #numbers.formatDecimal(lc.amount, 1, 2)}">USD 100,000</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${lc.status.name() == 'APPROVED' ? 'bg-success' : (lc.status.name() == 'REJECTED' ? 'bg-danger' : 'bg-warning')}"
+                                                  th:text="${lc.status.displayName}">Status</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${recentLCs == null or #lists.isEmpty(recentLCs)}">
+                                        <td colspan="3" class="text-center text-muted py-3">No recent letters of credit</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Bank Guarantees -->
+                <div class="col-md-6" sec:authorize="hasAnyRole('CUSTOMER', 'OFFICER')">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-shield-check me-2"></i>Recent Bank Guarantees</span>
+                            <a href="/guarantee" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="bg : ${recentGuarantees}">
+                                        <td>
+                                            <a th:href="@{/guarantee/view/{id}(id=${bg.guaranteeId})}" th:text="${bg.referenceNumber}">REF001</a>
+                                        </td>
+                                        <td th:text="${bg.currency + ' ' + #numbers.formatDecimal(bg.guaranteeAmount, 1, 2)}">USD 50,000</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${bg.status.name() == 'ACTIVE' ? 'bg-success' : (bg.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-warning')}"
+                                                  th:text="${bg.status.displayName}">Status</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${recentGuarantees == null or #lists.isEmpty(recentGuarantees)}">
+                                        <td colspan="3" class="text-center text-muted py-3">No recent bank guarantees</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beneficiary Summary (shows LCs/BGs where the current user is the beneficiary) -->
+                <div class="row mb-4" sec:authorize="hasAnyRole('CUSTOMER')">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-person-square me-2"></i>You are a beneficiary in
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h5 class="mb-0">Letters of Credit</h5>
+                                                <p class="text-muted mb-0">Count: <strong th:text="${beneficiaryLCCount != null ? beneficiaryLCCount : 0}">0</strong></p>
+                                                <p class="mt-2 mb-0"><a th:href="@{/lc}" class="btn btn-sm btn-outline-primary">View all LCs</a></p>
+                                            </div>
+                                            <div>
+                                                <i class="bi bi-file-earmark-text" style="font-size: 2.5rem; opacity:0.25"></i>
+                                            </div>
+                                        </div>
+                                        <hr/>
+                                        <!-- recent beneficiary LCs list -->
+                                        <ul class="list-unstyled mb-0">
+                                            <li th:each="lc : ${beneficiaryLCs}" th:if="${beneficiaryLCs != null}">
+                                                <a th:href="@{/lc/view/{id}(id=${lc.lcId})}" th:text="${lc.referenceNumber}" class="text-decoration-none">REF</a>
+                                                <small class="text-muted ms-2" th:text="${lc.currency + ' ' + #numbers.formatDecimal(lc.amount, 1, 2)}"></small>
+                                            </li>
+                                            <li th:if="${beneficiaryLCs == null or #lists.isEmpty(beneficiaryLCs)}" class="text-muted">You are not listed as a beneficiary on any recent LCs.</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h5 class="mb-0">Bank Guarantees</h5>
+                                                <p class="text-muted mb-0">Count: <strong th:text="${beneficiaryBGCount != null ? beneficiaryBGCount : 0}">0</strong></p>
+                                                <p class="mt-2 mb-0"><a th:href="@{/guarantee}" class="btn btn-sm btn-outline-success">View all Guarantees</a></p>
+                                            </div>
+                                            <div>
+                                                <i class="bi bi-shield-check" style="font-size: 2.5rem; opacity:0.25"></i>
+                                            </div>
+                                        </div>
+                                        <hr/>
+                                        <!-- recent beneficiary BGs list -->
+                                        <ul class="list-unstyled mb-0">
+                                            <li th:each="bg : ${beneficiaryGuarantees}" th:if="${beneficiaryGuarantees != null}">
+                                                <a th:href="@{/guarantee/view/{id}(id=${bg.guaranteeId})}" th:text="${bg.referenceNumber}" class="text-decoration-none">REF</a>
+                                                <small class="text-muted ms-2" th:text="${bg.currency + ' ' + #numbers.formatDecimal(bg.guaranteeAmount, 1, 2)}"></small>
+                                            </li>
+                                            <li th:if="${beneficiaryGuarantees == null or #lists.isEmpty(beneficiaryGuarantees)}" class="text-muted">You are not listed as a beneficiary on any recent guarantees.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Recent Risk Assessments (for Risk role) -->
+                <div class="col-md-6" sec:authorize="hasRole('RISK')">
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-graph-up me-2"></i>Recent Risk Assessments</span>
+                            <a href="/risk" class="btn btn-sm btn-outline-primary">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Reference</th>
+                                        <th>Score</th>
+                                        <th>Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="ra : ${recentAssessments}">
+                                        <td>
+                                            <a th:href="@{/risk/view/{id}(id=${ra.riskId})}" th:text="${ra.transactionReference}">TXN001</a>
+                                        </td>
+                                        <td th:text="${ra.riskScore}">75</td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${ra.riskLevel.name() == 'HIGH' ? 'bg-danger' : (ra.riskLevel.name() == 'MEDIUM' ? 'bg-warning' : 'bg-success')}"
+                                                  th:text="${ra.riskLevel.displayName}">Level</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${recentAssessments == null or #lists.isEmpty(recentAssessments)}">
+                                        <td colspan="3" class="text-center text-muted py-3">No recent risk assessments</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

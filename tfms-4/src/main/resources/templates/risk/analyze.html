@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Risk Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style th:replace="~{layout :: styles}"></style>
+</head>
+<body>
+    <nav th:replace="~{layout :: sidebar}"></nav>
+    <div class="main-content">
+        <div class="top-navbar"><div><h5 class="mb-0" th:text="${pageTitle}">Risk Analysis</h5></div>
+            <div class="d-flex align-items-center"><div class="dropdown"><a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-person-circle me-2" style="font-size:1.5rem;"></i><span sec:authentication="name">User</span></a><ul class="dropdown-menu dropdown-menu-end"><li><form th:action="@{/logout}" method="post" class="m-0"><button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Logout</button></form></li></ul></div></div>
+        </div>
+        <div class="page-content">
+            <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-circle me-2"></i><span th:text="${errorMessage}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header"><i class="bi bi-shield-exclamation me-2"></i>Perform Risk Assessment</div>
+                        <div class="card-body">
+                            <form th:action="@{/risk/analyze}" th:object="${riskAssessment}" method="post">
+                                <div class="row g-3">
+                                    <div class="col-md-6"><label class="form-label">Transaction Reference <span class="text-danger">*</span></label><input type="text" class="form-control" th:field="*{transactionReference}" placeholder="LC/BG Reference Number" required></div>
+                                    <div class="col-md-6"><label class="form-label">Transaction Type</label>
+                                        <select class="form-select" name="transactionType">
+                                            <option value="LC">Letter of Credit</option>
+                                            <option value="BG">Bank Guarantee</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12"><h6 class="mt-3 mb-3"><i class="bi bi-list-check me-2"></i>Risk Factors Assessment</h6></div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Country Risk</label>
+                                        <select class="form-select risk-factor" name="countryRisk" data-weight="20">
+                                            <option value="1">Low - Stable economy, low political risk</option>
+                                            <option value="2">Medium - Some economic volatility</option>
+                                            <option value="3">High - Unstable economy or sanctions</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Counterparty Risk</label>
+                                        <select class="form-select risk-factor" name="counterpartyRisk" data-weight="25">
+                                            <option value="1">Low - Well-known, good credit history</option>
+                                            <option value="2">Medium - Limited credit history</option>
+                                            <option value="3">High - New or poor credit history</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Transaction Amount Risk</label>
+                                        <select class="form-select risk-factor" name="amountRisk" data-weight="20">
+                                            <option value="1">Low - Within normal limits</option>
+                                            <option value="2">Medium - Above average</option>
+                                            <option value="3">High - Unusually large amount</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Documentation Risk</label>
+                                        <select class="form-select risk-factor" name="documentationRisk" data-weight="15">
+                                            <option value="1">Low - Complete and verified</option>
+                                            <option value="2">Medium - Partially verified</option>
+                                            <option value="3">High - Incomplete or unverified</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Industry/Sector Risk</label>
+                                        <select class="form-select risk-factor" name="sectorRisk" data-weight="20">
+                                            <option value="1">Low - Stable sector</option>
+                                            <option value="2">Medium - Moderate volatility</option>
+                                            <option value="3">High - High-risk sector</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Calculated Risk Score</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" th:field="*{riskScore}" id="calculatedScore" readonly>
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-12"><label class="form-label">Risk Factors (JSON)</label><textarea class="form-control" th:field="*{riskFactors}" rows="3" id="riskFactorsJson"></textarea></div>
+                                    <div class="col-12"><label class="form-label">Assessment Remarks</label><textarea class="form-control" th:field="*{remarks}" rows="3" placeholder="Detailed analysis and recommendations..."></textarea></div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <a href="/risk" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Cancel</a>
+                                    <div><button type="button" class="btn btn-outline-primary me-2" onclick="calculateRisk()"><i class="bi bi-calculator me-2"></i>Calculate Score</button>
+                                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Submit Assessment</button></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card mb-4"><div class="card-header"><i class="bi bi-speedometer2 me-2"></i>Risk Score Guide</div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3"><span class="badge bg-success me-2" style="width:60px">0-40%</span><span>Low Risk - Proceed with standard checks</span></div>
+                            <div class="d-flex align-items-center mb-3"><span class="badge bg-warning me-2" style="width:60px">41-70%</span><span>Medium Risk - Additional review required</span></div>
+                            <div class="d-flex align-items-center"><span class="badge bg-danger me-2" style="width:60px">71-100%</span><span>High Risk - Escalate to senior management</span></div>
+                        </div>
+                    </div>
+                    <div class="card"><div class="card-header"><i class="bi bi-info-circle me-2"></i>Assessment Guidelines</div>
+                        <div class="card-body small">
+                            <ul class="mb-0"><li>Review all available documentation</li><li>Check counterparty credit reports</li><li>Verify country sanctions status</li><li>Assess industry trends</li><li>Consider historical transaction patterns</li></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function calculateRisk() {
+            const factors = document.querySelectorAll('.risk-factor');
+            let totalScore = 0, totalWeight = 0, factorsObj = {};
+            factors.forEach(f => {
+                const weight = parseInt(f.dataset.weight);
+                const value = parseInt(f.value);
+                totalWeight += weight;
+                totalScore += (value / 3) * weight;
+                factorsObj[f.name] = {level: value, weight: weight};
+            });
+            const score = Math.round((totalScore / totalWeight) * 100);
+            document.getElementById('calculatedScore').value = score;
+            document.getElementById('riskFactorsJson').value = JSON.stringify(factorsObj, null, 2);
+        }
+    </script>
+    <style>:root{--sidebar-width:250px}.sidebar{position:fixed;top:0;left:0;height:100vh;width:var(--sidebar-width);background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);padding-top:20px;z-index:1000}.sidebar .brand{color:white;font-size:1.5rem;font-weight:bold;padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:20px}.sidebar .nav-link{color:rgba(255,255,255,0.8);padding:12px 20px;display:flex;align-items:center}.sidebar .nav-link:hover{color:white;background:rgba(255,255,255,0.1)}.sidebar .nav-link i{margin-right:10px}.sidebar .nav-section{color:rgba(255,255,255,0.5);font-size:0.75rem;text-transform:uppercase;padding:20px 20px 10px}.main-content{margin-left:var(--sidebar-width)}.top-navbar{background:white;padding:15px 30px;box-shadow:0 2px 4px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center}.page-content{padding:30px;background-color:#f8f9fa;min-height:calc(100vh - 70px)}.card{border:none;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.08)}.card-header{background:white;border-bottom:1px solid #eee;font-weight:600}</style>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">LCs Sent to Risk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style th:replace="~{layout :: styles}"></style>
+</head>
+<body>
+<nav th:replace="~{layout :: sidebar}"></nav>
+<div class="main-content">
+    <div class="top-navbar"><div><h5 class="mb-0" th:text="${pageTitle}">LCs Sent to Risk</h5></div></div>
+    <div class="page-content">
+        <div class="card">
+            <div class="card-header">LCs Sent to Risk</div>
+            <div th:fragment="queueTable(lcs)" class="card-body">
+                <div th:if="${lcs.empty}" class="text-muted py-3">No LCs currently in the risk queue.</div>
+                <div th:if="${!lcs.empty}" class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                        <tr><th>Reference</th><th>Applicant</th><th>Beneficiary</th><th>Amount</th><th>Expiry</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="lc : ${lcs}">
+                            <td th:text="${lc.referenceNumber}"></td>
+                            <td th:text="${lc.applicantName}"></td>
+                            <td th:text="${lc.beneficiaryName}"></td>
+                            <td th:text="${lc.currency + ' ' + #numbers.formatDecimal(lc.amount, 1, 2)}"></td>
+                            <td th:text="${#temporals.format(lc.expiryDate, 'dd-MMM-yyyy')}"></td>
+                            <td>
+                                <a th:href="@{/lc/view/{id}(id=${lc.lcId})}" class="btn btn-sm btn-outline-primary">View</a>
+                                <a th:href="@{/risk/analyze(transactionReference=${lc.referenceNumber}, transactionType='LC')}" class="btn btn-sm btn-outline-success">Analyze</a>
+                            </td>
+                        </tr>
+                        <tr th:if="${lcs == null or #lists.isEmpty(lcs)}">
+                            <td colspan="6" class="text-center text-muted py-3">No LCs currently in the risk queue.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
